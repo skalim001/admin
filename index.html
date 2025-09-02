@@ -83,7 +83,7 @@ function loadTable(section) {
   switch(section){
     case 'inrDeposits':
       title.innerText = "Pending INR Deposits";
-      columns = ["ID","User ID","Amount","Status","Type","Screenshot"];
+      columns = ["ID","User ID","Amount","Status","Type","Screenshot"]; // view-only
       break;
     case 'usdtDeposits':
       title.innerText = "Pending USDT Deposits";
@@ -113,16 +113,22 @@ function loadTable(section) {
       const tr=document.createElement("tr");
       columns.forEach(col=>{
         const td=document.createElement("td");
+
         if(col==="Action"){
-          td.innerHTML=`<button class="verify-btn" onclick="verify('${section}',${d.id})">✅</button>
-                        <button class="reject-btn" onclick="reject('${section}',${d.id})">✖</button>`;
+          // action buttons only for deposits/withdraws except INR Deposits
+          if(section !== 'inrDeposits'){
+            td.innerHTML=`<button class="verify-btn" onclick="verify('${section}',${d.id})">✅</button>
+                          <button class="reject-btn" onclick="reject('${section}',${d.id})">✖</button>`;
+          } else {
+            td.innerText = "-";
+          }
         } else if(col==="Screenshot" && d.screenshotUrl){
           td.innerHTML=`<a href="${d.screenshotUrl}" target="_blank">View</a>`;
         } else {
           // dynamic key mapping
           let key = col.replace(/\s+/g,'').toLowerCase();
           if(key==="amount" && d[key]!==undefined){
-            td.innerText = col.includes("USDT") ? `$${d[key]}` : `₹${d[key]}`;
+            td.innerText = col.toLowerCase().includes("usdt") ? `$${d[key]}` : `₹${d[key]}`;
           } else {
             td.innerText = d[key]!==undefined ? d[key] : '';
           }
