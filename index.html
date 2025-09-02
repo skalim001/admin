@@ -35,17 +35,12 @@
 </table>
 
 <script>
-  const API_BASE = "https://xinpay.onrender.com/api/inr-deposits";
-  const APP_SIGNATURE = "ECA9885A6765214580FD62F0AFF0AA186DFD3CB040591E39DDEF33EC5726F2B0";
+  // ✅ Use the admin backend endpoint
+  const API_BASE = "https://xinpay.onrender.com/api/admin/inr-deposits";
 
   async function fetchDeposits() {
     try {
-      const res = await fetch(`${API_BASE}/pending`, {
-        headers: {
-          "X-App-Signature": APP_SIGNATURE,
-          "Content-Type": "application/json"
-        }
-      });
+      const res = await fetch(`${API_BASE}/pending`);
       const data = await res.json();
       const tbody = document.querySelector("#inrTable tbody");
       tbody.innerHTML = "";
@@ -67,19 +62,13 @@
       });
     } catch (err) {
       console.error("Failed to fetch deposits:", err);
-      alert("Failed to fetch deposits. Check server & signature.");
+      alert("Failed to fetch deposits. Check server.");
     }
   }
 
   async function verify(id) {
     try {
-      const res = await fetch(`${API_BASE}/${id}/verify`, {
-        method: "PUT",
-        headers: {
-          "X-App-Signature": APP_SIGNATURE,
-          "Content-Type": "application/json"
-        }
-      });
+      const res = await fetch(`${API_BASE}/${id}/verify`, { method: "PUT" });
       if (res.ok) fetchDeposits(); else alert("Failed to verify");
     } catch (err) {
       console.error(err);
@@ -89,13 +78,7 @@
 
   async function reject(id) {
     try {
-      const res = await fetch(`${API_BASE}/${id}/reject`, {
-        method: "PUT",
-        headers: {
-          "X-App-Signature": APP_SIGNATURE,
-          "Content-Type": "application/json"
-        }
-      });
+      const res = await fetch(`${API_BASE}/${id}/reject`, { method: "PUT" });
       if (res.ok) fetchDeposits(); else alert("Failed to reject");
     } catch (err) {
       console.error(err);
