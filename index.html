@@ -17,8 +17,8 @@
   th { background-color: #4a3aff; color: white; }
   tr:nth-child(even) { background-color: #f9f9f9; }
   tr:hover { background-color: #e8e8ff; }
-  .verify-btn, .approve-btn { background-color:#4CAF50; color:white; margin:2px; }
-  .reject-btn { background-color:#f44336; color:white; margin:2px; }
+  .verify-btn, .approve-btn { background-color:#4CAF50; color:white; margin:2px; padding:6px 12px; border-radius:5px; cursor:pointer; }
+  .reject-btn { background-color:#f44336; color:white; margin:2px; padding:6px 12px; border-radius:5px; cursor:pointer; }
   a { color:#4a3aff; text-decoration:none; }
   a:hover { text-decoration:underline; }
 </style>
@@ -63,6 +63,15 @@ function login() {
   }
 }
 
+function getApiBase(section){
+  switch(section){
+    case 'inrDeposits': return "https://xinpay.onrender.com/api/admin/inr-deposits";
+    case 'usdtDeposits': return "https://xinpay.onrender.com/api/admin/usdt-deposits";
+    case 'inrWithdraws': return "https://xinpay.onrender.com/api/admin/inr-withdraws";
+    case 'usdtWithdraws': return "https://xinpay.onrender.com/api/admin/usdt-withdraws";
+  }
+}
+
 function loadTable(section) {
   const title = document.getElementById("tableTitle");
   const thead = document.getElementById("tableHeader");
@@ -70,28 +79,22 @@ function loadTable(section) {
   document.getElementById("tableSection").style.display = "block";
   tbody.innerHTML = "";
 
-  let API_BASE = "";
   let columns = [];
-
   switch(section){
     case 'inrDeposits':
       title.innerText = "Pending INR Deposits";
-      API_BASE = "https://xinpay.onrender.com/api/admin/inr-deposits";
-      columns = ["ID","User ID","Amount","Status","Type","Screenshot","Action"];
+      columns = ["ID","User ID","Amount","Status","Type","Screenshot"];
       break;
     case 'usdtDeposits':
       title.innerText = "Pending USDT Deposits";
-      API_BASE = "https://xinpay.onrender.com/api/admin/usdt-deposits";
       columns = ["ID","User ID","Amount","Status","Type","Screenshot","Action"];
       break;
     case 'inrWithdraws':
       title.innerText = "Pending INR Withdrawals";
-      API_BASE = "https://xinpay.onrender.com/api/admin/inr-withdraws";
       columns = ["ID","User ID","Amount","Account No.","IFSC","Requested At","Action"];
       break;
     case 'usdtWithdraws':
       title.innerText = "Pending USDT Withdrawals";
-      API_BASE = "https://xinpay.onrender.com/api/admin/usdt-withdraws";
       columns = ["ID","User ID","Amount","Wallet Address","Requested At","Action"];
       break;
   }
@@ -103,7 +106,7 @@ function loadTable(section) {
   });
 
   // fetch data
-  fetch(`${API_BASE}/pending`)
+  fetch(`${getApiBase(section)}/pending`)
   .then(res=>res.json())
   .then(data=>{
     data.forEach(d=>{
@@ -113,11 +116,16 @@ function loadTable(section) {
         if(col==="Action"){
           td.innerHTML=`<button class="verify-btn" onclick="verify('${section}',${d.id})">✅</button>
                         <button class="reject-btn" onclick="reject('${section}',${d.id})">✖</button>`;
-        } else if(col==="Screenshot"){
+        } else if(col==="Screenshot" && d.screenshotUrl){
           td.innerHTML=`<a href="${d.screenshotUrl}" target="_blank">View</a>`;
         } else {
-          const key = col.replace(/\s+/g,'').toLowerCase();
-          td.innerText = d[key]!==undefined ? d[key] : '';
+          // dynamic key mapping
+          let key = col.replace(/\s+/g,'').toLowerCase();
+          if(key==="amount" && d[key]!==undefined){
+            td.innerText = col.includes("USDT") ? `$${d[key]}` : `₹${d[key]}`;
+          } else {
+            td.innerText = d[key]!==undefined ? d[key] : '';
+          }
         }
         tr.appendChild(td);
       });
@@ -125,15 +133,6 @@ function loadTable(section) {
     });
   })
   .catch(err=>{console.error(err); alert("Failed to fetch data");});
-}
-
-function getApiBase(section){
-  switch(section){
-    case 'inrDeposits': return "https://xinpayn.onrender.com/api/admin/inr-deposits";
-    case 'usdtDeposits': return "https://xinpay.onrender.com/api/admin/usdt-deposits";
-    case 'inrWithdraws': return "https://xinpay.onrender.com/api/admin/inr-withdraws";
-    case 'usdtWithdraws': return "https://xinpay.onrender.com/api/admin/usdt-withdraws";
-  }
 }
 
 function verify(section,id){
