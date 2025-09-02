@@ -42,7 +42,7 @@
   <button onclick="loadTable('usdtDeposits')">USDT Deposits</button>
   <button onclick="loadTable('inrWithdraws')">INR Withdraws</button>
   <button onclick="loadTable('usdtWithdraws')">USDT Withdraws</button>
-  <button onclick="loadBankDetails()">Bank Details</button>
+  <button onclick="loadTable('bankDetails')">Bank Details</button>
   <button onclick="loadTable('trc20Wallet')">TRC20 Wallet Address</button>
 </div>
 
@@ -67,7 +67,6 @@
   </form>
   <p id="statusMsg" style="margin-top:10px;"></p>
 </div>
-
 
 <script>
 const PASSWORD = "Admin123";
@@ -237,9 +236,10 @@ function loadBankDetails() {
   fetch("https://xinpay.onrender.com/api/admin/bank-details")
     .then(res => {
       if (!res.ok) throw new Error("Failed to fetch bank details");
-      return res.json();
+      return res.json(); // parse as JSON
     })
     .then(data => {
+      if (!data) throw new Error("No bank details found");
       document.getElementById("accountNumber").value = data.accountNumber || '';
       document.getElementById("ifscCode").value = data.ifscCode || '';
       document.getElementById("accountHolder").value = data.accountHolder || '';
@@ -251,6 +251,9 @@ function loadBankDetails() {
       document.getElementById("statusMsg").innerText = "❌ Failed to fetch bank details";
     });
 }
+
+
+
 
 // Save bank details
 document.getElementById("bankForm").addEventListener("submit", async function(e){
@@ -264,29 +267,18 @@ document.getElementById("bankForm").addEventListener("submit", async function(e)
   const statusMsg = document.getElementById("statusMsg");
   statusMsg.innerText="Saving...";
   try{
-    const res = await fetch("https://xinpay.onrender.com/api/admin/bank-details/update",{
+    const res = await fetch(getApiBase("bankDetails")+"/update",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify(form)
     });
-    if(res.ok){
-      statusMsg.innerText = "✅ Bank details updated!";
-    } else {
-      const errText = await res.text();
-      statusMsg.innerText = `❌ Failed to save: ${errText}`;
-    }
-  }catch(err){
-    console.error(err); 
-    statusMsg.innerText="❌ Error occurred";
-  }
+    statusMsg.innerText = res.ok ? "✅ Bank details updated!" : "❌ Failed to save.";
+  }catch(err){ console.error(err); statusMsg.innerText="❌ Error occurred"; }
 });
-
 </script>
 
 </body>
 </html>
-
-
 
 
 
