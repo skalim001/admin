@@ -1,158 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>XinPay Admin Panel</title>
-<style>
-  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin:0; padding:0; }
-  #loginForm, #menu, #tableSection { max-width: 1200px; margin: 40px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-  h2 { color: #4a3aff; margin-bottom: 20px; }
-  input[type=password] { padding:10px; width:300px; font-size:16px; border-radius:5px; border:1px solid #ccc; margin-right:10px; }
-  button { padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-size:16px; transition:0.2s; }
-  button:hover { opacity:0.9; }
-  #menu button { background-color:#4a3aff; color:white; margin:5px; }
-  table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-  th, td { padding: 12px; border: 1px solid #ddd; text-align: center; }
-  th { background-color: #4a3aff; color: white; }
-  tr:nth-child(even) { background-color: #f9f9f9; }
-  tr:hover { background-color: #e8e8ff; }
-  .verify-btn, .approve-btn { background-color:#4CAF50; color:white; margin:2px; padding:6px 12px; border-radius:5px; cursor:pointer; }
-  .reject-btn { background-color:#f44336; color:white; margin:2px; padding:6px 12px; border-radius:5px; cursor:pointer; }
-  a { color:#4a3aff; text-decoration:none; }
-  a:hover { text-decoration:underline; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INR Deposit Admin Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: center; }
+    th { background-color: #4CAF50; color: white; }
+    tr:nth-child(even) { background-color: #f2f2f2; }
+    button { padding: 6px 12px; margin: 4px; cursor: pointer; border: none; border-radius: 4px; }
+    .verify-btn { background-color: #4CAF50; color: white; }
+    .reject-btn { background-color: #f44336; color: white; }
+  </style>
 </head>
 <body>
 
-<!-- Login -->
-<div id="loginForm">
-  <h2>Admin Login</h2>
-  <input type="password" id="adminPassword" placeholder="Enter password">
-  <button onclick="login()">Login</button>
-</div>
+<h2>Pending INR Deposits</h2>
 
-<!-- Menu -->
-<div id="menu" style="display:none;">
-  <h2>Admin Panel</h2>
-  <button onclick="loadTable('inrDeposits')">INR Deposits</button>
-  <button onclick="loadTable('usdtDeposits')">USDT Deposits</button>
-  <button onclick="loadTable('inrWithdraws')">INR Withdraws</button>
-  <button onclick="loadTable('usdtWithdraws')">USDT Withdraws</button>
-</div>
-
-<!-- Table -->
-<div id="tableSection" style="display:none;">
-  <h2 id="tableTitle"></h2>
-  <table id="adminTable">
-    <thead><tr id="tableHeader"></tr></thead>
-    <tbody></tbody>
-  </table>
-</div>
+<table id="inrTable">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>User ID</th>
+      <th>Amount</th>
+      <th>Status</th>
+      <th>Type</th>
+      <th>Screenshot</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
 <script>
-const PASSWORD = "Admin123"; // client-side password
+  // ✅ Use the admin backend endpoint
+  const API_BASE = "https://xinpay.onrender.com/api/admin/inr-deposits";
 
-function login() {
-  const input = document.getElementById("adminPassword").value;
-  if(input === PASSWORD) {
-    document.getElementById("loginForm").style.display = "none";
-    document.getElementById("menu").style.display = "block";
-  } else {
-    alert("Incorrect password");
-  }
-}
-
-function getApiBase(section){
-  switch(section){
-    case 'inrDeposits': return "https://xinpay.onrender.com/api/admin/inr-deposits";
-    case 'usdtDeposits': return "https://xinpay.onrender.com/api/admin/usdt-deposits";
-    case 'inrWithdraws': return "https://xinpay.onrender.com/api/admin/inr-withdraws";
-    case 'usdtWithdraws': return "https://xinpay.onrender.com/api/admin/usdt-withdraws";
-  }
-}
-
-function loadTable(section) {
-  const title = document.getElementById("tableTitle");
-  const thead = document.getElementById("tableHeader");
-  const tbody = document.querySelector("#adminTable tbody");
-  document.getElementById("tableSection").style.display = "block";
-  tbody.innerHTML = "";
-
-  let columns = [];
-  switch(section){
-    case 'inrDeposits':
-      title.innerText = "Pending INR Deposits";
-      columns = ["ID","User ID","Amount","Status","Type","Screenshot","Action"];
-      break;
-    case 'usdtDeposits':
-      title.innerText = "Pending USDT Deposits";
-      columns = ["ID","User ID","Amount","Status","Type","Screenshot","Action"];
-      break;
-    case 'inrWithdraws':
-      title.innerText = "Pending INR Withdrawals";
-      columns = ["ID","User ID","Amount","Account No.","IFSC","Requested At","Action"];
-      break;
-    case 'usdtWithdraws':
-      title.innerText = "Pending USDT Withdrawals";
-      columns = ["ID","User ID","Amount","Wallet Address","Requested At","Action"];
-      break;
-  }
-
-  // create table header
-  thead.innerHTML = "";
-  columns.forEach(col=>{
-    const th = document.createElement("th");
-    th.innerText = col;
-    thead.appendChild(th);
-  });
-
-  // fetch table data
-  fetch(`${getApiBase(section)}/pending`)
-  .then(res=>res.json())
-  .then(data=>{
-    data.forEach(d=>{
-      const tr=document.createElement("tr");
-      columns.forEach(col=>{
-        const td=document.createElement("td");
-
-        if(col==="Action"){
-          if(section === 'inrDeposits'){ // view-only
-            td.innerHTML = `<span style="color:gray;">-</span>`;
-          } else {
-            td.innerHTML=`<button class="verify-btn" onclick="verify('${section}',${d.id})">✅</button>
-                          <button class="reject-btn" onclick="reject('${section}',${d.id})">✖</button>`;
-          }
-        } else if(col==="Screenshot" && d.screenshotUrl){
-          td.innerHTML=`<a href="${d.screenshotUrl}" target="_blank">View</a>`;
-        } else {
-          let key = col.replace(/\s+/g,'').toLowerCase();
-          if(key==="amount" && d[key]!==undefined){
-            td.innerText = section.toLowerCase().includes("usdt") ? `$${d[key]}` : `₹${d[key]}`;
-          } else {
-            td.innerText = d[key]!==undefined ? d[key] : '';
-          }
-        }
-
-        tr.appendChild(td);
+  async function fetchDeposits() {
+    try {
+      const res = await fetch(`${API_BASE}/pending`);
+      const data = await res.json();
+      const tbody = document.querySelector("#inrTable tbody");
+      tbody.innerHTML = "";
+      data.forEach(d => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${d.id}</td>
+          <td>${d.userId}</td>
+          <td>₹${d.amount}</td>
+          <td>${d.status}</td>
+          <td>${d.type}</td>
+          <td><a href="${d.screenshotUrl}" target="_blank">View</a></td>
+          <td>
+            <button class="verify-btn" onclick="verify(${d.id})">✅</button>
+            <button class="reject-btn" onclick="reject(${d.id})">✖️</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
       });
-      tbody.appendChild(tr);
-    });
-  })
-  .catch(err=>{console.error(err); alert("Failed to fetch data");});
-}
+    } catch (err) {
+      console.error("Failed to fetch deposits:", err);
+      alert("Failed to fetch deposits. Check server.");
+    }
+  }
 
-// Approve/Verify function
-function verify(section,id){
-  fetch(`${getApiBase(section)}/${id}/verify`,{method:"PUT"})
-    .then(res=>res.ok?loadTable(section):alert("Failed to verify"));
-}
+  async function verify(id) {
+    try {
+      const res = await fetch(`${API_BASE}/${id}/verify`, { method: "PUT" });
+      if (res.ok) fetchDeposits(); else alert("Failed to verify");
+    } catch (err) {
+      console.error(err);
+      alert("Error verifying deposit");
+    }
+  }
 
-// Reject function
-function reject(section,id){
-  fetch(`${getApiBase(section)}/${id}/reject`,{method:"PUT"})
-    .then(res=>res.ok?loadTable(section):alert("Failed to reject"));
-}
+  async function reject(id) {
+    try {
+      const res = await fetch(`${API_BASE}/${id}/reject`, { method: "PUT" });
+      if (res.ok) fetchDeposits(); else alert("Failed to reject");
+    } catch (err) {
+      console.error(err);
+      alert("Error rejecting deposit");
+    }
+  }
+
+  fetchDeposits();
 </script>
 
 </body>
