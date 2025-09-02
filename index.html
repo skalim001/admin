@@ -230,18 +230,24 @@ function reject(section,id){
 
 // --- BANK DETAILS ---
 function loadBankDetails(){
-  document.getElementById("bankFormPanel").style.display="block";
-  fetch(getApiBase("bankDetails"))
-    .then(res=>res.json())
-    .then(data=>{
-      document.getElementById("accountNumber").value=data.accountNumber||'';
-      document.getElementById("ifscCode").value=data.ifscCode||'';
-      document.getElementById("accountHolder").value=data.accountHolder||'';
-      document.getElementById("qrImageUrl").value=data.qrUrl||'';
-      document.getElementById("statusMsg").innerText="";
+  fetch("https://xinpay.onrender.com/api/admin/bank-details") // should be GET endpoint
+    .then(res=>{
+      if(!res.ok) throw new Error("HTTP error " + res.status);
+      return res.json();
     })
-    .catch(err=>console.error(err));
+    .then(data => {
+      document.getElementById("accountNumber").value = data.accountNumber || '';
+      document.getElementById("ifscCode").value = data.ifscCode || '';
+      document.getElementById("accountHolder").value = data.accountHolder || '';
+      document.getElementById("qrImageUrl").value = data.qrUrl || '';
+      document.getElementById("statusMsg").innerText = '';
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById("statusMsg").innerText = "❌ Failed to fetch data";
+    });
 }
+
 
 // Save bank details
 document.getElementById("bankForm").addEventListener("submit", async function(e){
@@ -267,5 +273,6 @@ document.getElementById("bankForm").addEventListener("submit", async function(e)
 
 </body>
 </html>
+
 
 
