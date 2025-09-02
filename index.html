@@ -42,6 +42,7 @@
   <button onclick="loadTable('inrWithdraws')">INR Withdraws</button>
   <button onclick="loadTable('usdtWithdraws')">USDT Withdraws</button>
   <button onclick="loadBankDetails()">Bank Details</button>
+  
   <button onclick="loadTable('trc20Wallet')">TRC20 Wallet Address</button>
 </div>
 
@@ -163,52 +164,58 @@ function reject(section,id){ fetch(`${getApiBase(section)}/${id}/reject`,{method
 
 // --- BANK DETAILS ---
 function loadBankDetails() {
-  document.getElementById("tableSection").style.display="none";
-  document.getElementById("bankFormPanel").style.display="block";
-  const statusMsg = document.getElementById("statusMsg");
-  statusMsg.innerText="Loading...";
-  fetch(getApiBase("bankDetails"))
-    .then(res=>{
-      if(!res.ok) throw new Error("Failed to fetch bank details");
+  document.getElementById("bankFormPanel").style.display = "block";
+  document.getElementById("tableSection").style.display = "none";
+
+  fetch("https://xinpay.onrender.com/api/admin/bank-details")
+    .then(res => {
+      if (!res.ok) throw new Error("Failed to fetch bank details");
       return res.json();
     })
-    .then(data=>{
+    .then(data => {
       document.getElementById("accountNumber").value = data.accountNumber || '';
       document.getElementById("ifscCode").value = data.ifscCode || '';
       document.getElementById("accountHolder").value = data.accountHolder || '';
       document.getElementById("qrImageUrl").value = data.qrUrl || '';
-      statusMsg.innerText="";
+      document.getElementById("statusMsg").innerText = "";
     })
-    .catch(err=>{
+    .catch(err => {
       console.error(err);
-      statusMsg.innerText="❌ Failed to fetch bank details";
+      document.getElementById("statusMsg").innerText = "❌ Failed to fetch bank details";
     });
 }
 
 // Save bank details
 document.getElementById("bankForm").addEventListener("submit", async function(e){
   e.preventDefault();
-  const statusMsg = document.getElementById("statusMsg");
   const form = {
     accountNumber: document.getElementById("accountNumber").value.trim(),
     ifscCode: document.getElementById("ifscCode").value.trim(),
     accountHolder: document.getElementById("accountHolder").value.trim(),
     qrUrl: document.getElementById("qrImageUrl").value.trim()
   };
+  const statusMsg = document.getElementById("statusMsg");
   statusMsg.innerText="Saving...";
   try{
-    const res = await fetch(getApiBase("bankDetails")+"/update",{
+    const res = await fetch("https://xinpay.onrender.com/api/admin/bank-details/update",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify(form)
     });
-    statusMsg.innerText = res.ok ? "✅ Bank details updated!" : "❌ Failed to save.";
-  } catch(err){
-    console.error(err);
+    if(res.ok){
+      statusMsg.innerText = "✅ Bank details updated!";
+    } else {
+      const errText = await res.text();
+      statusMsg.innerText = `❌ Failed to save: ${errText}`;
+    }
+  }catch(err){
+    console.error(err); 
     statusMsg.innerText="❌ Error occurred";
   }
 });
+
 </script>
 
 </body>
 </html>
+
