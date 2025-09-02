@@ -68,6 +68,7 @@
   <p id="statusMsg" style="margin-top:10px;"></p>
 </div>
 
+
 <script>
 const PASSWORD = "Admin123";
 const keyMap = {
@@ -236,10 +237,9 @@ function loadBankDetails() {
   fetch("https://xinpay.onrender.com/api/admin/bank-details")
     .then(res => {
       if (!res.ok) throw new Error("Failed to fetch bank details");
-      return res.json(); // parse as JSON
+      return res.json();
     })
     .then(data => {
-      if (!data) throw new Error("No bank details found");
       document.getElementById("accountNumber").value = data.accountNumber || '';
       document.getElementById("ifscCode").value = data.ifscCode || '';
       document.getElementById("accountHolder").value = data.accountHolder || '';
@@ -251,9 +251,6 @@ function loadBankDetails() {
       document.getElementById("statusMsg").innerText = "❌ Failed to fetch bank details";
     });
 }
-
-
-
 
 // Save bank details
 document.getElementById("bankForm").addEventListener("submit", async function(e){
@@ -267,18 +264,28 @@ document.getElementById("bankForm").addEventListener("submit", async function(e)
   const statusMsg = document.getElementById("statusMsg");
   statusMsg.innerText="Saving...";
   try{
-    const res = await fetch(getApiBase("bankDetails")+"/update",{
+    const res = await fetch("https://xinpay.onrender.com/api/admin/bank-details/update",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify(form)
     });
-    statusMsg.innerText = res.ok ? "✅ Bank details updated!" : "❌ Failed to save.";
-  }catch(err){ console.error(err); statusMsg.innerText="❌ Error occurred"; }
+    if(res.ok){
+      statusMsg.innerText = "✅ Bank details updated!";
+    } else {
+      const errText = await res.text();
+      statusMsg.innerText = `❌ Failed to save: ${errText}`;
+    }
+  }catch(err){
+    console.error(err); 
+    statusMsg.innerText="❌ Error occurred";
+  }
 });
+
 </script>
 
 </body>
 </html>
+
 
 
 
