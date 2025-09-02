@@ -6,9 +6,9 @@
 <title>XinPay Admin Panel</title>
 <style>
   body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin:0; padding:0; }
-  #loginForm, #menu, #tableSection { max-width: 1200px; margin: 40px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+  #loginForm, #menu, .panel { max-width: 1200px; margin: 40px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
   h2 { color: #4a3aff; margin-bottom: 20px; }
-  input[type=password] { padding:10px; width:300px; font-size:16px; border-radius:5px; border:1px solid #ccc; margin-right:10px; }
+  input[type=password], input[type=text] { padding:10px; width:300px; font-size:16px; border-radius:5px; border:1px solid #ccc; margin-right:10px; }
   button { padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-size:16px; transition:0.2s; }
   button:hover { opacity:0.9; }
   #menu button { background-color:#4a3aff; color:white; margin:5px; }
@@ -21,15 +21,17 @@
   .reject-btn { background-color:#f44336; color:white; margin:2px; padding:6px 12px; border-radius:5px; cursor:pointer; }
   a { color:#4a3aff; text-decoration:none; }
   a:hover { text-decoration:underline; }
+  #bankFormContainer { display:none; }
 </style>
 </head>
 <body>
 
-<!-- Login -->
+<!-- Admin Login -->
 <div id="loginForm">
   <h2>Admin Login</h2>
   <input type="password" id="adminPassword" placeholder="Enter password">
   <button onclick="login()">Login</button>
+  <p id="loginMsg" style="color:red; margin-top:10px;"></p>
 </div>
 
 <!-- Menu -->
@@ -39,10 +41,11 @@
   <button onclick="loadTable('usdtDeposits')">USDT Deposits</button>
   <button onclick="loadTable('inrWithdraws')">INR Withdraws</button>
   <button onclick="loadTable('usdtWithdraws')">USDT Withdraws</button>
+  <button onclick="loadTable('bankDetails')">Bank Details</button>
 </div>
 
-<!-- Table -->
-<div id="tableSection" style="display:none;">
+<!-- Generic Table Section -->
+<div class="panel" id="tableSection" style="display:none;">
   <h2 id="tableTitle"></h2>
   <table id="adminTable">
     <thead><tr id="tableHeader"></tr></thead>
@@ -50,126 +53,151 @@
   </table>
 </div>
 
+<!-- Bank Details Form -->
+<div class="panel" id="bankFormContainer">
+  <h2>Update Bank Details (with QR Link)</h2>
+  <form id="bankForm">
+    <label>Account Number:</label>
+    <input type="text" id="accountNumber" required>
+    <label>IFSC Code:</label>
+    <input type="text" id="ifscCode" required>
+    <label>Account Holder:</label>
+    <input type="text" id="accountHolder" required>
+    <label>QR Image URL:</label>
+    <input type="text" id="qrImageUrl">
+    <button type="submit">Submit</button>
+    <p class="message" id="statusMsg"></p>
+  </form>
+</div>
+
 <script>
-const PASSWORD = "Admin123";
+const ADMIN_PASSWORD = "Admin123";
 
-// Column mapping for all panels
-const keyMap = {
-  "ID": "id",
-  "User ID": "userId",
-  "Amount": "amount",
-  "Status": "status",
-  "Type": "type",
-  "Screenshot": "screenshotUrl",
-  "Account No.": "accountNumber",
-  "IFSC": "ifscCode",
-  "Requested At": "requestedAt",
-  "Wallet Address": "walletAddress"
-};
-
-function login() {
-  const input = document.getElementById("adminPassword").value;
-  if(input === PASSWORD) {
-    document.getElementById("loginForm").style.display = "none";
-    document.getElementById("menu").style.display = "block";
+// Login
+function login(){
+  const input = document.getElementById('adminPassword').value.trim();
+  if(input===ADMIN_PASSWORD){
+    document.getElementById('loginForm').style.display='none';
+    document.getElementById('menu').style.display='block';
   } else {
-    alert("Incorrect password");
+    document.getElementById('loginMsg').textContent='Incorrect password';
   }
 }
 
+// API Base
 function getApiBase(section){
   switch(section){
     case 'inrDeposits': return "https://xinpay.onrender.com/api/admin/inr-deposits";
     case 'usdtDeposits': return "https://xinpay.onrender.com/api/admin/usdt-deposits";
     case 'inrWithdraws': return "https://xinpay.onrender.com/api/admin/inr-withdraw";
     case 'usdtWithdraws': return "https://xinpay.onrender.com/api/admin/usdt-withdraw";
+    case 'bankDetails': return "https://xinpay.onrender.com/api/bank-details";
   }
 }
 
-function loadTable(section) {
-  const title = document.getElementById("tableTitle");
-  const thead = document.getElementById("tableHeader");
+// Load Table or Bank Panel
+function loadTable(section){
+  document.getElementById('tableSection').style.display='none';
+  document.getElementById('bankFormContainer').style.display='none';
+
+  if(section==='bankDetails'){
+    loadBankPanel();
+    return;
+  }
+
+  document.getElementById('tableSection').style.display='block';
+  const titleEl = document.getElementById('tableTitle');
+  const thead = document.getElementById('tableHeader');
   const tbody = document.querySelector("#adminTable tbody");
-  document.getElementById("tableSection").style.display = "block";
   tbody.innerHTML = "";
 
-  let columns = [];
+  let columns=[];
   switch(section){
-    case 'inrDeposits':
-      title.innerText = "Pending INR Deposits";
-      columns = ["ID","User ID","Amount","Status","Type","Screenshot","Action"];
-      break;
-    case 'usdtDeposits':
-      title.innerText = "Pending USDT Deposits";
-      columns = ["ID","User ID","Amount","Status","Type","Screenshot","Action"];
-      break;
-    case 'inrWithdraws':
-      title.innerText = "Pending INR Withdrawals";
-      columns = ["ID","User ID","Amount","Account No.","IFSC","Requested At","Action"];
-      break;
-    case 'usdtWithdraws':
-      title.innerText = "Pending USDT Withdrawals";
-      columns = ["ID","User ID","Amount","Wallet Address","Requested At","Action"];
-      break;
+    case 'inrDeposits': titleEl.innerText="Pending INR Deposits"; columns=["ID","User ID","Amount","Status","Type","Screenshot","Action"]; break;
+    case 'usdtDeposits': titleEl.innerText="Pending USDT Deposits"; columns=["ID","User ID","Amount","Status","Type","Screenshot","Action"]; break;
+    case 'inrWithdraws': titleEl.innerText="Pending INR Withdrawals"; columns=["ID","User ID","Amount","Account No.","IFSC","Requested At","Action"]; break;
+    case 'usdtWithdraws': titleEl.innerText="Pending USDT Withdrawals"; columns=["ID","User ID","Amount","Wallet Address","Requested At","Action"]; break;
   }
 
-  // Create table headers
-  thead.innerHTML = "";
+  thead.innerHTML="";
   columns.forEach(col=>{
-    const th = document.createElement("th");
-    th.innerText = col;
-    thead.appendChild(th);
+    const th=document.createElement("th"); th.innerText=col; thead.appendChild(th);
   });
 
-  // Fetch data
   fetch(`${getApiBase(section)}/pending`)
-  .then(res=>res.json())
-  .then(data=>{
-    data.forEach(d=>{
-      const tr = document.createElement("tr");
-      columns.forEach(col=>{
-        const td = document.createElement("td");
-
-        if(col==="Action"){
-          td.innerHTML=`<button class="approve-btn" onclick="approve('${section}', ${d.id})">✅</button>
-                        <button class="reject-btn" onclick="reject('${section}', ${d.id})">✖</button>`;
-        } else if(col==="Screenshot" && d.screenshotUrl){
-          td.innerHTML=`<a href="${d.screenshotUrl}" target="_blank">View</a>`;
-        } else {
-          let key = keyMap[col];
-          if(key==="amount" && d[key]!==undefined){
-            td.innerText = section.toLowerCase().includes("usdt") ? `$${d[key]}` : `₹${d[key]}`;
+    .then(res=>res.json())
+    .then(data=>{
+      data.forEach(d=>{
+        const tr=document.createElement("tr");
+        columns.forEach(col=>{
+          const td=document.createElement("td");
+          if(col==="Action"){
+            td.innerHTML=`<button class="approve-btn" onclick="verify('${section}',${d.id})">✅</button>
+                          <button class="reject-btn" onclick="reject('${section}',${d.id})">✖</button>`;
+          } else if(col==="Screenshot" && d.screenshotUrl){
+            td.innerHTML=`<a href="${d.screenshotUrl}" target="_blank">View</a>`;
           } else {
-            td.innerText = d[key]!==undefined ? d[key] : '';
+            let key = col.replace(/\s+/g,'').toLowerCase();
+            if(key==="amount" && d[key]!==undefined){
+              td.innerText = section.toLowerCase().includes("usdt") ? `$${d[key]}` : `₹${d[key]}`;
+            } else {
+              td.innerText = d[key]!==undefined ? d[key] : '';
+            }
           }
-        }
-        tr.appendChild(td);
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
       });
-      tbody.appendChild(tr);
+    })
+    .catch(err=>{console.error(err); alert("Failed to fetch data");});
+}
+
+// Approve / Reject
+function verify(section,id){
+  fetch(`${getApiBase(section)}/${id}/verify`,{method:"PUT"}).then(res=>res.ok?loadTable(section):alert("Failed to verify"));
+}
+function reject(section,id){
+  fetch(`${getApiBase(section)}/${id}/reject`,{method:"PUT"}).then(res=>res.ok?loadTable(section):alert("Failed to reject"));
+}
+
+// Bank Panel
+function loadBankPanel(){
+  document.getElementById('bankFormContainer').style.display='block';
+  fetch(getApiBase('bankDetails'))
+    .then(res=>res.json())
+    .then(data=>{
+      document.getElementById('accountNumber').value=data.accountNumber||'';
+      document.getElementById('ifscCode').value=data.ifscCode||'';
+      document.getElementById('accountHolder').value=data.accountHolder||'';
+      document.getElementById('qrImageUrl').value=data.qrUrl||'';
+    })
+    .catch(err=>console.error(err));
+}
+
+// Bank Form Submit
+document.getElementById('bankForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const form = {
+    accountNumber: document.getElementById('accountNumber').value.trim(),
+    ifscCode: document.getElementById('ifscCode').value.trim(),
+    accountHolder: document.getElementById('accountHolder').value.trim(),
+    qrUrl: document.getElementById('qrImageUrl').value.trim()
+  };
+  const statusMsg = document.getElementById('statusMsg');
+  statusMsg.textContent = "Uploading...";
+  try{
+    const res = await fetch("https://xinpay.onrender.com/api/admin/bank-details/update",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify(form)
     });
-  })
-  .catch(err=>{ console.error(err); alert("Failed to fetch data"); });
-}
-
-function approve(section, id){
-  let url = getApiBase(section);
-  if(section === 'inrDeposits' || section === 'usdtDeposits'){
-    url += `/${id}/verify`; // deposits use verify endpoint
-  } else {
-    url += `/${id}/approve`; // withdrawals use approve endpoint
+    statusMsg.textContent = res.ok ? "✅ Bank details updated successfully!" : "❌ Failed to update bank details.";
+  } catch(err){
+    console.error(err);
+    statusMsg.textContent="❌ An error occurred.";
   }
-
-  fetch(url, { method: "PUT" })
-    .then(res => res.ok ? loadTable(section) : alert("Failed to approve"));
-}
-
-
-function reject(section, id){
-  fetch(`${getApiBase(section)}/${id}/reject`, { method: "PUT" })
-    .then(res=>res.ok ? loadTable(section) : alert("Failed to reject"));
-}
+});
 </script>
 
 </body>
 </html>
-
