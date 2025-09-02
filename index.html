@@ -51,7 +51,21 @@
 </div>
 
 <script>
-const PASSWORD = "Admin123"; // client-side password
+const PASSWORD = "Admin123";
+
+// Column mapping for all panels
+const keyMap = {
+  "ID": "id",
+  "User ID": "userId",
+  "Amount": "amount",
+  "Status": "status",
+  "Type": "type",
+  "Screenshot": "screenshotUrl",
+  "Account No.": "accountNumber",
+  "IFSC": "ifscCode",
+  "Requested At": "requestedAt",
+  "Wallet Address": "walletAddress"
+};
 
 function login() {
   const input = document.getElementById("adminPassword").value;
@@ -99,31 +113,32 @@ function loadTable(section) {
       break;
   }
 
-  // header
+  // Create table headers
   thead.innerHTML = "";
   columns.forEach(col=>{
-    const th=document.createElement("th"); th.innerText=col; thead.appendChild(th);
+    const th = document.createElement("th");
+    th.innerText = col;
+    thead.appendChild(th);
   });
 
-  // fetch data
+  // Fetch data
   fetch(`${getApiBase(section)}/pending`)
   .then(res=>res.json())
   .then(data=>{
     data.forEach(d=>{
-      const tr=document.createElement("tr");
+      const tr = document.createElement("tr");
       columns.forEach(col=>{
-        const td=document.createElement("td");
+        const td = document.createElement("td");
 
         if(col==="Action"){
-          td.innerHTML=`<button class="verify-btn" onclick="verify('${section}', ${d.id})">✅</button>
+          td.innerHTML=`<button class="approve-btn" onclick="approve('${section}', ${d.id})">✅</button>
                         <button class="reject-btn" onclick="reject('${section}', ${d.id})">✖</button>`;
         } else if(col==="Screenshot" && d.screenshotUrl){
           td.innerHTML=`<a href="${d.screenshotUrl}" target="_blank">View</a>`;
         } else {
-          let key = col.replace(/\s+/g,'').toLowerCase();
+          let key = keyMap[col];
           if(key==="amount" && d[key]!==undefined){
-            if(section.toLowerCase().includes("usdt")) td.innerText = `$${d[key]}`;
-            else td.innerText = `₹${d[key]}`;
+            td.innerText = section.toLowerCase().includes("usdt") ? `$${d[key]}` : `₹${d[key]}`;
           } else {
             td.innerText = d[key]!==undefined ? d[key] : '';
           }
@@ -133,20 +148,20 @@ function loadTable(section) {
       tbody.appendChild(tr);
     });
   })
-  .catch(err=>{console.error(err); alert("Failed to fetch data");});
+  .catch(err=>{ console.error(err); alert("Failed to fetch data"); });
 }
 
-function verify(section,id){
-  fetch(`${getApiBase(section)}/${id}/verify`,{method:"PUT"})
-    .then(res=>res.ok?loadTable(section):alert("Failed to verify"));
+// Approve / Reject functions
+function approve(section, id){
+  fetch(`${getApiBase(section)}/${id}/approve`, { method: "PUT" })
+    .then(res=>res.ok ? loadTable(section) : alert("Failed to approve"));
 }
 
-function reject(section,id){
-  fetch(`${getApiBase(section)}/${id}/reject`,{method:"PUT"})
-    .then(res=>res.ok?loadTable(section):alert("Failed to reject"));
+function reject(section, id){
+  fetch(`${getApiBase(section)}/${id}/reject`, { method: "PUT" })
+    .then(res=>res.ok ? loadTable(section) : alert("Failed to reject"));
 }
 </script>
 
 </body>
 </html>
-
