@@ -83,7 +83,7 @@ function loadTable(section) {
   switch(section){
     case 'inrDeposits':
       title.innerText = "Pending INR Deposits";
-      columns = ["ID","User ID","Amount","Status","Type","Screenshot"]; // view-only
+      columns = ["ID","User ID","Amount","Status","Type","Screenshot","Action"];
       break;
     case 'usdtDeposits':
       title.innerText = "Pending USDT Deposits";
@@ -99,13 +99,15 @@ function loadTable(section) {
       break;
   }
 
-  // header
+  // create table header
   thead.innerHTML = "";
   columns.forEach(col=>{
-    const th=document.createElement("th"); th.innerText=col; thead.appendChild(th);
+    const th = document.createElement("th");
+    th.innerText = col;
+    thead.appendChild(th);
   });
 
-  // fetch data
+  // fetch table data
   fetch(`${getApiBase(section)}/pending`)
   .then(res=>res.json())
   .then(data=>{
@@ -115,24 +117,23 @@ function loadTable(section) {
         const td=document.createElement("td");
 
         if(col==="Action"){
-          // action buttons only for deposits/withdraws except INR Deposits
-          if(section !== 'inrDeposits'){
+          if(section === 'inrDeposits'){ // view-only
+            td.innerHTML = `<span style="color:gray;">-</span>`;
+          } else {
             td.innerHTML=`<button class="verify-btn" onclick="verify('${section}',${d.id})">✅</button>
                           <button class="reject-btn" onclick="reject('${section}',${d.id})">✖</button>`;
-          } else {
-            td.innerText = "-";
           }
         } else if(col==="Screenshot" && d.screenshotUrl){
           td.innerHTML=`<a href="${d.screenshotUrl}" target="_blank">View</a>`;
         } else {
-          // dynamic key mapping
           let key = col.replace(/\s+/g,'').toLowerCase();
           if(key==="amount" && d[key]!==undefined){
-            td.innerText = col.toLowerCase().includes("usdt") ? `$${d[key]}` : `₹${d[key]}`;
+            td.innerText = section.toLowerCase().includes("usdt") ? `$${d[key]}` : `₹${d[key]}`;
           } else {
             td.innerText = d[key]!==undefined ? d[key] : '';
           }
         }
+
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
@@ -141,11 +142,13 @@ function loadTable(section) {
   .catch(err=>{console.error(err); alert("Failed to fetch data");});
 }
 
+// Approve/Verify function
 function verify(section,id){
   fetch(`${getApiBase(section)}/${id}/verify`,{method:"PUT"})
     .then(res=>res.ok?loadTable(section):alert("Failed to verify"));
 }
 
+// Reject function
 function reject(section,id){
   fetch(`${getApiBase(section)}/${id}/reject`,{method:"PUT"})
     .then(res=>res.ok?loadTable(section):alert("Failed to reject"));
