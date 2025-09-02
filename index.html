@@ -17,11 +17,12 @@
   th { background-color: #4a3aff; color: white; }
   tr:nth-child(even) { background-color: #f9f9f9; }
   tr:hover { background-color: #e8e8ff; }
-  .approve-btn { background-color:#4CAF50; color:white; margin:2px; padding:6px 12px; border-radius:5px; cursor:pointer; }
+  .verify-btn, .approve-btn, .edit-btn { background-color:#4CAF50; color:white; margin:2px; padding:6px 12px; border-radius:5px; cursor:pointer; }
   .reject-btn { background-color:#f44336; color:white; margin:2px; padding:6px 12px; border-radius:5px; cursor:pointer; }
   .save-btn { background-color:#039BE5; color:white; margin:2px; padding:6px 12px; border-radius:5px; cursor:pointer; }
   a { color:#4a3aff; text-decoration:none; }
   a:hover { text-decoration:underline; }
+  #bankForm { display:none; margin-top:20px; }
   #bankForm input { width: 100%; margin:5px 0; padding:8px; }
 </style>
 </head>
@@ -41,8 +42,7 @@
   <button onclick="loadTable('usdtDeposits')">USDT Deposits</button>
   <button onclick="loadTable('inrWithdraws')">INR Withdraws</button>
   <button onclick="loadTable('usdtWithdraws')">USDT Withdraws</button>
-  <button onclick="loadBankDetails()">Bank Details</button>
-  
+  <button onclick="loadTable('bankDetails')">Bank Details</button>
   <button onclick="loadTable('trc20Wallet')">TRC20 Wallet Address</button>
 </div>
 
@@ -95,9 +95,8 @@ function getApiBase(section){
   }
 }
 
-// Load table for deposits/withdraws/wallet
+// Load table or bank panel
 function loadTable(section) {
-  document.getElementById("bankFormPanel").style.display="none";
   const title = document.getElementById("tableTitle");
   const thead = document.getElementById("tableHeader");
   const tbody = document.querySelector("#adminTable tbody");
@@ -105,15 +104,31 @@ function loadTable(section) {
   tbody.innerHTML = "";
 
   let columns = [];
+
   switch(section){
-    case 'inrDeposits': title.innerText="Pending INR Deposits"; columns=["ID","User ID","Amount","Status","Type","Screenshot","Action"]; break;
-    case 'usdtDeposits': title.innerText="Pending USDT Deposits"; columns=["ID","User ID","Amount","Status","Type","Screenshot","Action"]; break;
-    case 'inrWithdraws': title.innerText="Pending INR Withdrawals"; columns=["ID","User ID","Amount","Account No.","IFSC","Requested At","Action"]; break;
-    case 'usdtWithdraws': title.innerText="Pending USDT Withdrawals"; columns=["ID","User ID","Amount","Wallet Address","Requested At","Action"]; break;
-    case 'trc20Wallet': title.innerText="Update TRC20 Wallet Address"; columns=["Current Address","New Address","Action"]; break;
+    case 'inrDeposits':
+      title.innerText = "Pending INR Deposits";
+      columns = ["ID","User ID","Amount","Status","Type","Screenshot","Action"];
+      break;
+    case 'usdtDeposits':
+      title.innerText = "Pending USDT Deposits";
+      columns = ["ID","User ID","Amount","Status","Type","Screenshot","Action"];
+      break;
+    case 'inrWithdraws':
+      title.innerText = "Pending INR Withdrawals";
+      columns = ["ID","User ID","Amount","Account No.","IFSC","Requested At","Action"];
+      break;
+    case 'usdtWithdraws':
+      title.innerText = "Pending USDT Withdrawals";
+      columns = ["ID","User ID","Amount","Wallet Address","Requested At","Action"];
+      break;
+    case 'trc20Wallet':
+      title.innerText = "Update TRC20 Wallet Address";
+      columns = ["Current Address", "New Address", "Action"];
+      break;
   }
 
-  // table headers
+  // Create table headers
   thead.innerHTML = "";
   columns.forEach(col=>{
     const th = document.createElement("th");
@@ -121,33 +136,76 @@ function loadTable(section) {
     thead.appendChild(th);
   });
 
-  // fetch data
+  // Fetch data or render inputs
   if(section === 'trc20Wallet'){
-    fetch(getApiBase('trc20Wallet'))
-      .then(res=>res.text())
-      .then(addr=>{
-        const tr=document.createElement("tr");
-        tr.innerHTML=`<td>${addr}</td>
-                      <td><input type="text" id="newTrc20Address" placeholder="Enter new TRC20 address"></td>
-                      <td><button onclick="updateTrc20()" class="save-btn">Update</button></td>`;
+    // Fetch current address
+    fetch("https://xinpay.onrender.com/api/admin/wallet/usdt-address")
+      .then(res => res.text())
+      .then(currentAddress => {
+        const tr = document.createElement("tr");
+
+        // Current address column
+        const tdCurrent = document.createElement("td");
+        tdCurrent.innerText = currentAddress;
+        tr.appendChild(tdCurrent);
+
+        // Input for new address
+        const tdInput = document.createElement("td");
+        const input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = "Enter new TRC20 address";
+        input.id = "newTrc20Address";
+        tdInput.appendChild(input);
+        tr.appendChild(tdInput);
+
+        // Action button
+        const tdAction = document.createElement("td");
+        const btn = document.createElement("button");
+        btn.innerText = "Update";
+        btn.onclick = () => {
+          const newAddr = document.getElementById("newTrc20Address").value.trim();
+          if(!newAddr){
+            alert("Please enter the new TRC20 address");
+            return;
+          }
+          fetch("https://xinpay.onrender.com/api/admin/wallet/usdt-address", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newAddr)
+          })
+          .then(res=>res.text())
+          .then(msg=>{
+            alert(msg);
+            loadTable('trc20Wallet'); // refresh
+          })
+          .catch(err=>alert("Failed to update address"));
+        };
+        tdAction.appendChild(btn);
+        tr.appendChild(tdAction);
+
         tbody.appendChild(tr);
       });
   } else {
+    // existing code for other 5 tables
     fetch(`${getApiBase(section)}/pending`)
       .then(res=>res.json())
       .then(data=>{
         data.forEach(d=>{
-          const tr=document.createElement("tr");
+          const tr = document.createElement("tr");
           columns.forEach(col=>{
-            const td=document.createElement("td");
+            const td = document.createElement("td");
             if(col==="Action"){
-              td.innerHTML=`<button class="approve-btn" onclick="approve('${section}',${d.id})">✅</button>
-                            <button class="reject-btn" onclick="reject('${section}',${d.id})">✖</button>`;
+              td.innerHTML=`<button class="approve-btn" onclick="approve('${section}', ${d.id})">✅</button>
+                            <button class="reject-btn" onclick="reject('${section}', ${d.id})">✖</button>`;
             } else if(col==="Screenshot" && d.screenshotUrl){
               td.innerHTML=`<a href="${d.screenshotUrl}" target="_blank">View</a>`;
             } else {
-              const key = keyMap[col];
-              td.innerText = (key==="amount") ? (section.toLowerCase().includes("usdt") ? `$${d[key]}` : `₹${d[key]}`) : d[key] || '';
+              let key = keyMap[col];
+              if(key==="amount" && d[key]!==undefined){
+                td.innerText = section.toLowerCase().includes("usdt") ? `$${d[key]}` : `₹${d[key]}`;
+              } else {
+                td.innerText = d[key]!==undefined ? d[key] : '';
+              }
             }
             tr.appendChild(td);
           });
@@ -158,9 +216,17 @@ function loadTable(section) {
   }
 }
 
-// Approve/Reject
-function approve(section,id){ fetch(`${getApiBase(section)}/${id}/approve`,{method:"PUT"}).then(res=>res.ok?loadTable(section):alert("Failed to approve")); }
-function reject(section,id){ fetch(`${getApiBase(section)}/${id}/reject`,{method:"PUT"}).then(res=>res.ok?loadTable(section):alert("Failed to reject")); }
+
+// Approve / Reject
+function approve(section,id){
+  let url = getApiBase(section);
+  if(section==='inrDeposits' || section==='usdtDeposits') url += `/${id}/verify`;
+  else url += `/${id}/approve`;
+  fetch(url,{method:"PUT"}).then(res=>res.ok?loadTable(section):alert("Failed to approve"));
+}
+function reject(section,id){
+  fetch(`${getApiBase(section)}/${id}/reject`,{method:"PUT"}).then(res=>res.ok?loadTable(section):alert("Failed to reject"));
+}
 
 // --- BANK DETAILS ---
 function loadBankDetails() {
@@ -170,9 +236,10 @@ function loadBankDetails() {
   fetch("https://xinpay.onrender.com/api/admin/bank-details")
     .then(res => {
       if (!res.ok) throw new Error("Failed to fetch bank details");
-      return res.json();
+      return res.json(); // parse as JSON
     })
     .then(data => {
+      if (!data) throw new Error("No bank details found");
       document.getElementById("accountNumber").value = data.accountNumber || '';
       document.getElementById("ifscCode").value = data.ifscCode || '';
       document.getElementById("accountHolder").value = data.accountHolder || '';
@@ -184,6 +251,9 @@ function loadBankDetails() {
       document.getElementById("statusMsg").innerText = "❌ Failed to fetch bank details";
     });
 }
+
+
+
 
 // Save bank details
 document.getElementById("bankForm").addEventListener("submit", async function(e){
@@ -197,25 +267,18 @@ document.getElementById("bankForm").addEventListener("submit", async function(e)
   const statusMsg = document.getElementById("statusMsg");
   statusMsg.innerText="Saving...";
   try{
-    const res = await fetch("https://xinpay.onrender.com/api/admin/bank-details/update",{
+    const res = await fetch(getApiBase("bankDetails")+"/update",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify(form)
     });
-    if(res.ok){
-      statusMsg.innerText = "✅ Bank details updated!";
-    } else {
-      const errText = await res.text();
-      statusMsg.innerText = `❌ Failed to save: ${errText}`;
-    }
-  }catch(err){
-    console.error(err); 
-    statusMsg.innerText="❌ Error occurred";
-  }
+    statusMsg.innerText = res.ok ? "✅ Bank details updated!" : "❌ Failed to save.";
+  }catch(err){ console.error(err); statusMsg.innerText="❌ Error occurred"; }
 });
-
 </script>
 
 </body>
 </html>
+
+
 
