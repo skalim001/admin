@@ -229,19 +229,17 @@ function reject(section,id){
 }
 
 // --- BANK DETAILS ---
-// --- BANK DETAILS ---
 function loadBankDetails() {
-  // Show the bank form panel
   document.getElementById("bankFormPanel").style.display = "block";
-  document.getElementById("tableSection").style.display = "none"; // hide table if visible
+  document.getElementById("tableSection").style.display = "none";
 
-  // Fetch current bank details from backend
-  fetch(getApiBase("bankDetails"))
+  fetch("https://xinpay.onrender.com/api/admin/bank-details")
     .then(res => {
       if (!res.ok) throw new Error("Failed to fetch bank details");
-      return res.json();
+      return res.json(); // parse as JSON
     })
     .then(data => {
+      if (!data) throw new Error("No bank details found");
       document.getElementById("accountNumber").value = data.accountNumber || '';
       document.getElementById("ifscCode").value = data.ifscCode || '';
       document.getElementById("accountHolder").value = data.accountHolder || '';
@@ -253,6 +251,7 @@ function loadBankDetails() {
       document.getElementById("statusMsg").innerText = "❌ Failed to fetch bank details";
     });
 }
+
 
 
 
@@ -280,6 +279,7 @@ document.getElementById("bankForm").addEventListener("submit", async function(e)
 
 </body>
 </html>
+
 
 
 
