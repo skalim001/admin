@@ -76,22 +76,22 @@ function loadTable(section) {
   switch(section){
     case 'inrDeposits':
       title.innerText = "Pending INR Deposits";
-      API_BASE = "https://xinpaynewbackend-master.onrender.com/api/admin/inr-deposits";
+      API_BASE = "https://xinpay.onrender.com/api/admin/inr-deposits";
       columns = ["ID","User ID","Amount","Status","Type","Screenshot","Action"];
       break;
     case 'usdtDeposits':
       title.innerText = "Pending USDT Deposits";
-      API_BASE = "https://xinpaynewbackend-master.onrender.com/api/admin/usdt-deposits";
+      API_BASE = "https://xinpay.onrender.com/api/admin/usdt-deposits";
       columns = ["ID","User ID","Amount","Status","Type","Screenshot","Action"];
       break;
     case 'inrWithdraws':
       title.innerText = "Pending INR Withdrawals";
-      API_BASE = "https://xinpaynewbackend-master.onrender.com/api/admin/inr-withdraws";
+      API_BASE = "https://xinpay.onrender.com/api/admin/inr-withdraws";
       columns = ["ID","User ID","Amount","Account No.","IFSC","Requested At","Action"];
       break;
     case 'usdtWithdraws':
       title.innerText = "Pending USDT Withdrawals";
-      API_BASE = "https://xinpaynewbackend-master.onrender.com/api/admin/usdt-withdraws";
+      API_BASE = "https://xinpay.onrender.com/api/admin/usdt-withdraws";
       columns = ["ID","User ID","Amount","Wallet Address","Requested At","Action"];
       break;
   }
@@ -129,7 +129,7 @@ function loadTable(section) {
 
 function getApiBase(section){
   switch(section){
-    case 'inrDeposits': return "https://xinpaynr.onrender.com/api/admin/inr-deposits";
+    case 'inrDeposits': return "https://xinpayn.onrender.com/api/admin/inr-deposits";
     case 'usdtDeposits': return "https://xinpay.onrender.com/api/admin/usdt-deposits";
     case 'inrWithdraws': return "https://xinpay.onrender.com/api/admin/inr-withdraws";
     case 'usdtWithdraws': return "https://xinpay.onrender.com/api/admin/usdt-withdraws";
