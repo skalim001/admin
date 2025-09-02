@@ -151,11 +151,18 @@ function loadTable(section) {
   .catch(err=>{ console.error(err); alert("Failed to fetch data"); });
 }
 
-// Approve / Reject functions
 function approve(section, id){
-  fetch(`${getApiBase(section)}/${id}/approve`, { method: "PUT" })
-    .then(res=>res.ok ? loadTable(section) : alert("Failed to approve"));
+  let url = getApiBase(section);
+  if(section === 'inrDeposits' || section === 'usdtDeposits'){
+    url += `/${id}/verify`; // deposits use verify endpoint
+  } else {
+    url += `/${id}/approve`; // withdrawals use approve endpoint
+  }
+
+  fetch(url, { method: "PUT" })
+    .then(res => res.ok ? loadTable(section) : alert("Failed to approve"));
 }
+
 
 function reject(section, id){
   fetch(`${getApiBase(section)}/${id}/reject`, { method: "PUT" })
@@ -165,3 +172,4 @@ function reject(section, id){
 
 </body>
 </html>
+
