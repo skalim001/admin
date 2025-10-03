@@ -112,11 +112,11 @@ function showPanel(panel){
 // API base URLs
 function getApiBase(section){
   switch(section){
-    case 'inrDeposits': return "https://xinpay.onrender.com/api/admin/inr-deposits";
-    case 'usdtDeposits': return "https://xinpay.onrender.com/api/admin/usdt-deposits";
-    case 'inrWithdraws': return "https://xinpay.onrender.com/api/admin/inr-withdraw";
-    case 'usdtWithdraws': return "https://xinpay.onrender.com/api/admin/usdt-withdraw";
-    case 'bankDetails': return "https://xinpay.onrender.com/api/admin/bank-details";
+    case 'inrDeposits': return "https://xinpay-wtfu.onrender.com/api/admin/inr-deposits";
+    case 'usdtDeposits': return "https://xinpay-wtfu.onrender.com/api/admin/usdt-deposits";
+    case 'inrWithdraws': return "https://xinpay-wtfu.onrender.com/api/admin/inr-withdraw";
+    case 'usdtWithdraws': return "https://xinpay-wtfu.onrender.com/api/admin/usdt-withdraw";
+    case 'bankDetails': return "https://xinpay-wtfu.onrender.com/api/admin/bank-details";
   }
 }
 
@@ -226,7 +226,7 @@ document.getElementById("bankForm").addEventListener("submit", async function(e)
 
 // --- TRC20 Wallet ---
 function loadCurrentWallet(){
-  fetch("https://xinpay.onrender.com/api/admin/wallet/usdt-address")
+  fetch("https://xinpay-wtfu.onrender.com/api/admin/wallet/usdt-address")
     .then(res=>res.text())
     .then(addr=>document.getElementById("newTrc20Address").value=addr)
     .catch(err=>alert("Failed to load current wallet"));
@@ -235,7 +235,7 @@ function loadCurrentWallet(){
 function updateWallet(){
   const newAddr = document.getElementById("newTrc20Address").value.trim();
   if(!newAddr){ alert("Please enter a TRC20 address"); return; }
-  fetch("https://xinpay.onrender.com/api/admin/wallet/usdt-address", {
+  fetch("https://xinpay-wtfu.onrender.com/api/admin/wallet/usdt-address", {
     method:"PUT",
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify(newAddr)
@@ -247,4 +247,3 @@ function updateWallet(){
 </script>
 </body>
 </html>
-
